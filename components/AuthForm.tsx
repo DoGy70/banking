@@ -60,6 +60,7 @@ function AuthForm({ type }: { type: string }) {
         });
 
         if (response) {
+          setUser(response);
           router.push("/");
         }
       }

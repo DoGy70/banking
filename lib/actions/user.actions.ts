@@ -3,12 +3,16 @@
 import {
   createBankAccountProps,
   exchangePublicTokenProps,
+  getBankByAccountIdProps,
+  getBankProps,
+  getBanksProps,
+  getUserInfoProps,
   signInProps,
   SignUpParams,
   User,
 } from "@/types";
 import { createAdminClient, createSessionClient } from "./appwrite";
-import { ID } from "node-appwrite";
+import { ID, Query } from "node-appwrite";
 import { cookies } from "next/headers";
 import { encryptId, extractCustomerIdFromUrl, parseStringify } from "../utils";
 import {
@@ -29,8 +33,10 @@ const {
 
 export async function signIn({ email, password }: signInProps) {
   try {
-    const { account } = await createAdminClient();
+    const { account, database } = await createAdminClient();
     const session = await account.createEmailPasswordSession(email, password);
+
+    if (!session) throw Error("Error getting session");
 
     cookies().set("appwrite-session", session.secret, {
       path: "/",
@@ -39,9 +45,29 @@ export async function signIn({ email, password }: signInProps) {
       secure: true,
     });
 
-    return parseStringify(session);
+    const user = await getUserInfo({ userId: session.userId });
+
+    return parseStringify(user);
   } catch (error) {
     console.error("Error", error);
+  }
+}
+
+export async function getUserInfo({ userId }: getUserInfoProps) {
+  try {
+    const { database } = await createAdminClient();
+
+    const user = await database.listDocuments(
+      DATABASE_ID!,
+      USER_COLLECTION_ID!,
+      [Query.equal("userId", [userId])]
+    );
+
+    if (user.total !== 1) throw new Error("Returned more than 1 user.");
+
+    return parseStringify(user.documents[0]);
+  } catch (error) {
+    console.error("An error has occurred when fetching users: ", error);
   }
 }
 
@@ -101,7 +127,9 @@ export async function signUp({ password, ...userData }: SignUpParams) {
 export async function getLoggedInUser() {
   try {
     const { account } = await createSessionClient();
-    const user = await account.get();
+    const result = await account.get();
+
+    const user = await getUserInfo({ userId: result.$id });
 
     return parseStringify(user);
   } catch (error) {
@@ -212,7 +240,7 @@ export async function exchangePublicToken({
     });
 
     // If the funding URL is not created, throw an error
-    if (!fundingSourceUrl) throw Error;
+    if (!fundingSourceUrl) throw Error("Error making funding source url.");
 
     // Create a bank account using the user ID, item ID, account ID, access token, funding source URL, and sharable ID
     await createBankAccount({
@@ -233,5 +261,62 @@ export async function exchangePublicToken({
     });
   } catch (error) {
     console.error("An error occurred while creating exchanging token: ", error);
+  }
+}
+
+export async function getBankByAccountId({
+  accountId,
+}: getBankByAccountIdProps) {
+  try {
+    const { database } = await createAdminClient();
+
+    const bank = await database.listDocuments(
+      DATABASE_ID!,
+      BANK_COLLECTION_ID!,
+      [Query.equal("$id", [accountId])]
+    );
+
+    if (bank.total !== 1) return null;
+
+    return parseStringify(bank.documents[0]);
+  } catch (error) {
+    console.error("Error", error);
+    return null;
+  }
+}
+
+export async function getBanks({ userId }: getBanksProps) {
+  try {
+    const { database } = await createAdminClient();
+
+    const bank = await database.listDocuments(
+      DATABASE_ID!,
+      BANK_COLLECTION_ID!,
+      [Query.equal("userId", [userId])]
+    );
+
+    return parseStringify(bank.documents);
+  } catch (error) {
+    console.error("Error: ", error);
+    return null;
+  }
+}
+
+export async function getBank({ documentId }: getBankProps) {
+  try {
+    const { database } = await createAdminClient();
+
+    const bank = await database.listDocuments(
+      DATABASE_ID!,
+      BANK_COLLECTION_ID!,
+      [Query.equal("$id", [documentId])]
+    );
+
+    if (bank.total !== 1) return null;
+
+    return parseStringify(bank.documents[0]);
+  } catch (error) {
+    console.error("Error: ", error);
+    return null;
   }
 }
