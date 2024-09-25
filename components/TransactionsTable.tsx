@@ -50,7 +50,6 @@ function TransactionsTable({ transactions }: TransactionTableProps) {
         </TableHeader>
         <TableBody>
           {transactions.map((transaction: Transaction) => {
-            console.log(transaction.category);
             const status = getTransactionStatus(new Date(transaction.date));
             const amount = formatAmount(transaction.amount);
 
