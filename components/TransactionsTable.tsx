@@ -23,7 +23,7 @@ import { transactionCategoryStyles } from "@/constants";
 function CategoryBadge({ category }: CategoryBadgeProps) {
   const { borderColor, backgroundColor, textColor, chipBackgroundColor } =
     transactionCategoryStyles[
-      category[0] as keyof typeof transactionCategoryStyles
+      category as keyof typeof transactionCategoryStyles
     ] || transactionCategoryStyles.default;
 
   return (
@@ -50,8 +50,10 @@ function TransactionsTable({ transactions }: TransactionTableProps) {
         </TableHeader>
         <TableBody>
           {transactions.map((transaction: Transaction) => {
+            console.log(transaction.category);
             const status = getTransactionStatus(new Date(transaction.date));
             const amount = formatAmount(transaction.amount);
+
             const isDebit = transaction.type === "debit";
             const isCredit = transaction.type === "credit";
 
@@ -88,7 +90,13 @@ function TransactionsTable({ transactions }: TransactionTableProps) {
                   {transaction.paymentChannel}
                 </TableCell>
                 <TableCell className="max-md:hidden pl-2 pr-8">
-                  <CategoryBadge category={transaction.category.slice(0, 1)} />
+                  <CategoryBadge
+                    category={
+                      typeof transaction.category === "object"
+                        ? transaction.category[0]
+                        : transaction.category
+                    }
+                  />
                 </TableCell>
               </TableRow>
             );

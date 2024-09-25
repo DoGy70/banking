@@ -269,11 +269,10 @@ export async function getBankByAccountId({
 }: getBankByAccountIdProps) {
   try {
     const { database } = await createAdminClient();
-
     const bank = await database.listDocuments(
       DATABASE_ID!,
       BANK_COLLECTION_ID!,
-      [Query.equal("$id", [accountId])]
+      [Query.equal("accountId", [accountId])]
     );
 
     if (bank.total !== 1) return null;

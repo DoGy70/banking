@@ -49,6 +49,7 @@ export const ITEMS = [
   },
 ];
 
+// prettier-ignore
 export const topCategoryStyles = {
   "Food and Drink": {
     bg: "bg-blue-25",
@@ -63,7 +64,7 @@ export const topCategoryStyles = {
     },
     icon: "/icons/monitor.svg",
   },
-  Travel: {
+  "Travel": {
     bg: "bg-success-25",
     circleBg: "bg-success-100",
     text: {
